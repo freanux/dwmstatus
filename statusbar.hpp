@@ -58,8 +58,8 @@ private:
 
     void set_running(bool v);
     bool is_running();
-    void set_dirty();
-    void set_dirty_no_lock();
+    void set_dirty(bool v);
+    void set_dirty_no_lock(bool v);
     bool is_dirty();
     bool is_dirty_no_lock();
     void update(const Section& section);

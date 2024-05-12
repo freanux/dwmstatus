@@ -98,7 +98,7 @@ void Statusbar::run() {
         }
         ++cs;
     }
-    set_dirty();
+    set_dirty(true);
     draw();
 
     ::install_signalhandlers(*this);
@@ -160,13 +160,13 @@ bool Statusbar::is_running() {
     return rv;
 }
 
-void Statusbar::set_dirty() {
+void Statusbar::set_dirty(bool v) {
     ::Scope lock(mtx);
-    set_dirty_no_lock();
+    set_dirty_no_lock(v);
 }
 
-void Statusbar::set_dirty_no_lock() {
-    dirty = true;
+void Statusbar::set_dirty_no_lock(bool v) {
+    dirty = v;
 }
 
 bool Statusbar::is_dirty() {
@@ -185,7 +185,7 @@ void Statusbar::update(const Section& section) {
 
 void Statusbar::update_no_lock(const Section& section) {
     elements[&section] = section.fn(section.args);
-    set_dirty_no_lock();
+    set_dirty_no_lock(true);
 }
 
 void Statusbar::draw() {
@@ -201,6 +201,6 @@ void Statusbar::draw_no_lock() {
         }
         XStoreName(dpy, root, ss.str().c_str());
         XFlush(dpy);
-        set_dirty_no_lock();
+        set_dirty_no_lock(false);
     }
 }
