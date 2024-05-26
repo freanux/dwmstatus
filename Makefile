@@ -13,6 +13,7 @@ ${OBJ}: config.mk
 
 ${BIN}: ${OBJ}
 	${CC} -o $@ ${OBJ} ${LDFLAGS}
+	${STRIP} $@
 
 clean:
 	rm -f dwmstatus ${OBJ}

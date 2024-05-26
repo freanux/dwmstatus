@@ -59,12 +59,13 @@ private:
     void set_running(bool v);
     bool is_running();
     void set_dirty(bool v);
-    void set_dirty_no_lock(bool v);
     bool is_dirty();
-    bool is_dirty_no_lock();
     void update(const Section& section);
-    void update_no_lock(const Section& section);
     void draw();
+
+    void set_dirty_no_lock(bool v);
+    bool is_dirty_no_lock();
+    void update_no_lock(const Section& section);
     void draw_no_lock();
 };
 

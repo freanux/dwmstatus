@@ -1,2 +1,10 @@
 *.o
+.cache
+.codelite
+.ctagsd
+codelite/Makefile
+codelite/build-Debug
+codelite/build-Release
+compile_commands.json
+dwmstatus.mk
 dwmstatus

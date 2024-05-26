@@ -18,3 +18,4 @@ LDFLAGS  = ${LIBS}
 
 # compiler and linker
 CC = g++
+STRIP = strip

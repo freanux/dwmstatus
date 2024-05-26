@@ -118,15 +118,14 @@ void Statusbar::run() {
             if (counter >= max_update) {
                 counter = 0;
             }
+            draw_no_lock();
         }
-        draw();
     }
     ::uninstall_signalhandlers();
 }
 
 void Statusbar::cancel() {
-    ::Scope lock(mtx);
-    running = false;
+    set_running(false);
 }
 
 void Statusbar::trigger(int signum) {
@@ -144,6 +143,8 @@ void Statusbar::trigger(int signum) {
 const Section *Statusbar::get_sections() const {
     return sections;
 }
+
+/**** PRIVATE ****/
 
 void Statusbar::set_running(bool v) {
    ::Scope lock(mtx);
@@ -165,17 +166,9 @@ void Statusbar::set_dirty(bool v) {
     set_dirty_no_lock(v);
 }
 
-void Statusbar::set_dirty_no_lock(bool v) {
-    dirty = v;
-}
-
 bool Statusbar::is_dirty() {
     ::Scope lock(mtx);
     return is_dirty_no_lock();
-}
-
-bool Statusbar::is_dirty_no_lock() {
-    return dirty;
 }
 
 void Statusbar::update(const Section& section) {
@@ -183,14 +176,24 @@ void Statusbar::update(const Section& section) {
     update_no_lock(section);
 }
 
-void Statusbar::update_no_lock(const Section& section) {
-    elements[&section] = section.fn(section.args);
-    set_dirty_no_lock(true);
-}
-
 void Statusbar::draw() {
     ::Scope lock(mtx);
     draw_no_lock();
+}
+
+/**** CRITICAL SECTION ****/
+
+void Statusbar::set_dirty_no_lock(bool v) {
+    dirty = v;
+}
+
+bool Statusbar::is_dirty_no_lock() {
+    return dirty;
+}
+
+void Statusbar::update_no_lock(const Section& section) {
+    elements[&section] = section.fn(section.args);
+    set_dirty_no_lock(true);
 }
 
 void Statusbar::draw_no_lock() {
