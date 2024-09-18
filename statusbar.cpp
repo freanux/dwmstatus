@@ -6,24 +6,15 @@
 
 namespace {
 
-    struct Scope {
-        Scope(std::mutex& mtx) : mtx(mtx) { mtx.lock();   }
-        ~Scope()                          { mtx.unlock(); }
-        std::mutex& mtx;
-    };
-
-    std::mutex smtx;
     Statusbar *sb = 0;
 
     void signalhandler_terminate(int) {
-        Scope lock(smtx);
         if (sb) {
             sb->cancel();
         }
     }
 
     void signalhandler_trigger(int signum) {
-        Scope lock(smtx);
         if (sb) {
             sb->trigger(signum);
         }
@@ -48,13 +39,11 @@ namespace {
     }
 
     void install_signalhandlers(Statusbar& s) {
-        Scope lock(smtx);
         sb = &s;
         modify_signalhandlers(sb->get_sections(), signalhandler_terminate, signalhandler_trigger);
     }
 
     void uninstall_signalhandlers() {
-        Scope lock(smtx);
         modify_signalhandlers(sb->get_sections(), SIG_DFL, SIG_DFL);
         sb = 0;
     }
@@ -106,19 +95,18 @@ void Statusbar::run() {
     while (is_running()) {
         sleep(1);
         {
-            ::Scope lock(mtx);
             ++counter;
             const Section *cs = sections;
             while (cs->fn) {
                 if (cs->update && counter % cs->update == 0) {
-                    update_no_lock(*cs);
+                    update(*cs);
                 }
                 ++cs;
             }
             if (counter >= max_update) {
                 counter = 0;
             }
-            draw_no_lock();
+            draw();
         }
     }
     ::uninstall_signalhandlers();
@@ -129,15 +117,14 @@ void Statusbar::cancel() {
 }
 
 void Statusbar::trigger(int signum) {
-    ::Scope lock(mtx);
     const Section *cs = sections;
     while (cs->fn) {
         if (cs->signum == signum) {
-            update_no_lock(*cs);
+            update(*cs);
         }
         ++cs;
     }
-    draw_no_lock();
+    draw();
 }
 
 const Section *Statusbar::get_sections() const {
@@ -147,63 +134,34 @@ const Section *Statusbar::get_sections() const {
 /**** PRIVATE ****/
 
 void Statusbar::set_running(bool v) {
-   ::Scope lock(mtx);
     running = v;
 }
 
 bool Statusbar::is_running() {
-    bool rv = false;
-    {
-        ::Scope lock(mtx);
-        rv = running;
-    }
-
-    return rv;
+    return running;
 }
 
 void Statusbar::set_dirty(bool v) {
-    ::Scope lock(mtx);
-    set_dirty_no_lock(v);
-}
-
-bool Statusbar::is_dirty() {
-    ::Scope lock(mtx);
-    return is_dirty_no_lock();
-}
-
-void Statusbar::update(const Section& section) {
-    ::Scope lock(mtx);
-    update_no_lock(section);
-}
-
-void Statusbar::draw() {
-    ::Scope lock(mtx);
-    draw_no_lock();
-}
-
-/**** CRITICAL SECTION ****/
-
-void Statusbar::set_dirty_no_lock(bool v) {
     dirty = v;
 }
 
-bool Statusbar::is_dirty_no_lock() {
+bool Statusbar::is_dirty() {
     return dirty;
 }
 
-void Statusbar::update_no_lock(const Section& section) {
+void Statusbar::update(const Section& section) {
     elements[&section] = section.fn(section.args);
-    set_dirty_no_lock(true);
+    set_dirty(true);
 }
 
-void Statusbar::draw_no_lock() {
-    if (is_dirty_no_lock()) {
+void Statusbar::draw() {
+    if (is_dirty()) {
         std::stringstream ss;
         for (const auto& v : elements) {
             ss << v.second;
         }
         XStoreName(dpy, root, ss.str().c_str());
         XFlush(dpy);
-        set_dirty_no_lock(false);
+        set_dirty(false);
     }
 }

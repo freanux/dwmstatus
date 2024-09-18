@@ -3,7 +3,6 @@
 
 #include <X11/Xlib.h>
 #include <string>
-#include <mutex>
 #include <map>
 #include <exception>
 
@@ -54,7 +53,6 @@ private:
     Window root;
 
     Elements elements;
-    std::mutex mtx;
 
     void set_running(bool v);
     bool is_running();
@@ -62,11 +60,6 @@ private:
     bool is_dirty();
     void update(const Section& section);
     void draw();
-
-    void set_dirty_no_lock(bool v);
-    bool is_dirty_no_lock();
-    void update_no_lock(const Section& section);
-    void draw_no_lock();
 };
 
 #endif
